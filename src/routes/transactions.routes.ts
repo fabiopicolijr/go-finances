@@ -9,6 +9,7 @@ const transactionsRouter = Router();
 
 transactionsRouter.get('/', async (request, response) => {
   // TODO
+  // teste
 });
 
 transactionsRouter.post('/', async (request, response) => {
