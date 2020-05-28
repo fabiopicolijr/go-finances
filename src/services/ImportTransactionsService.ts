@@ -42,8 +42,15 @@ class ImportTransactionsService {
 
     await new Promise(resolve => parseCSV.on('end', resolve));
 
-    console.log(categories);
-    console.log(transactions);
+    transactions.sort((a, b) => {
+      if (a.type > b.type) {
+        return 1;
+      }
+      if (a.type < b.type) {
+        return -1;
+      }
+      return 0;
+    });
   }
 }
 
