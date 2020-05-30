@@ -1,8 +1,9 @@
-import { getCustomRepository, getRepository, In, Not } from 'typeorm';
+import { getRepository, In } from 'typeorm';
 import fs from 'fs';
 import csvParse from 'csv-parse';
 import Transaction from '../models/Transaction';
 import Category from '../models/Category';
+// import TransactionsRepository from '../repositories/TransactionsRepository';
 
 interface RequestCSV {
   title: string;
@@ -11,22 +12,26 @@ interface RequestCSV {
   category: string;
 }
 
+/*
+  transactions.sort((a, b) => {
+    if (a.type > b.type) {
+      return 1;
+    }
+    if (a.type < b.type) {
+      return -1;
+    }
+    return 0;
+  });
+*/
+
 class ImportTransactionsService {
   async execute(filePath: string): Promise<Transaction[]> {
-    // ler o arquivo csv
-    // ordenar os registros por income antes de outcome
-    // verificar se o balance nao eh quebrado
-    // para cada registro que passar, verificar se uma categoria deve ser criada ou atualizada
-    // para cada registro que passar, criar uma transaction
-    // devolver todas as transacoes cadastradas
-
+    const transactionRepository = getRepository(Transaction);
     const categoryRepository = getRepository(Category);
-    // const transactionRepository = getCustomRepository(Repository);
 
     const contactsReadStream = fs.createReadStream(filePath);
 
     const parsers = csvParse({
-      delimiter: ',',
       from_line: 2,
     });
 
@@ -48,7 +53,7 @@ class ImportTransactionsService {
 
     await new Promise(resolve => parseCSV.on('end', resolve));
 
-    // Inicio do foreach de categorias do instrutor
+    // Inicio do 'foreach' de categorias
     const existentCategories = await categoryRepository.find({
       where: {
         title: In(categoriesCSV),
@@ -63,32 +68,35 @@ class ImportTransactionsService {
     // filtrando as categorias CSV unicas que nao existem nas categorias do BD
     const addUniqueCategoryTitles = categoriesCSV
       .filter(category => !existentCategoriesTitle.includes(category))
-      .filter((value, index, self) => self.indexOf(value) === index);
+      .filter((value, index, self) => self.indexOf(value) === index); // filtro que deixa os registros como unicos
 
     const newCategories = categoryRepository.create(
       addUniqueCategoryTitles.map(title => ({
         title,
       })),
     );
-    // Fim do foreach de categorias
+    // Fim do 'foreach' de categorias
 
-    // await categoryRepository.save(newCategories);
+    await categoryRepository.save(newCategories);
 
-    console.log({ exists: existentCategoriesTitle });
+    const finalCategories = [...newCategories, ...existentCategories];
 
-    console.log({ new: addUniqueCategoryTitles });
+    const createdTransactions = transactionRepository.create(
+      transactions.map(transaction => ({
+        title: transaction.title,
+        type: transaction.type,
+        value: transaction.value,
+        category: finalCategories.find(
+          category => category.title === transaction.category,
+        ),
+      })),
+    );
 
-    /*
-    transactions.sort((a, b) => {
-      if (a.type > b.type) {
-        return 1;
-      }
-      if (a.type < b.type) {
-        return -1;
-      }
-      return 0;
-    });
-    */
+    await transactionRepository.save(createdTransactions);
+
+    await fs.promises.unlink(filePath);
+
+    return createdTransactions;
   }
 }
 
