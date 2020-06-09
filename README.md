@@ -26,7 +26,7 @@
   # Run test suits
   yarn test
 
-  # Start application with a Android Emulator
+  # Start server
   yarn dev:server
 ```
 
