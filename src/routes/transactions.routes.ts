@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-import { getCustomRepository, getRepository, In } from 'typeorm';
+import { getCustomRepository } from 'typeorm';
 
 import multer from 'multer';
 import uploadConfig from '../config/upload';
@@ -9,29 +9,17 @@ import TransactionsRepository from '../repositories/TransactionsRepository';
 import CreateTransactionService from '../services/CreateTransactionService';
 import DeleteTransactionService from '../services/DeleteTransactionService';
 import ImportTransactionsService from '../services/ImportTransactionsService';
-import Category from '../models/Category';
 
 const transactionsRouter = Router();
 const upload = multer(uploadConfig);
 
 transactionsRouter.get('/', async (request, response) => {
   const transactionsRepository = getCustomRepository(TransactionsRepository);
-  const categoriesRepository = getRepository(Category);
 
   const balance = await transactionsRepository.getBalance();
 
-  const transactionsAll = await transactionsRepository.find();
-
-  const categories = await categoriesRepository.find();
-
-  const transactions = transactionsAll.map(transaction => ({
-    title: transaction.title,
-    type: transaction.type,
-    value: transaction.value,
-    category: categories.find(
-      category => category.id === transaction.category_id,
-    ),
-  }));
+  // devido ao eager no model, nao preciso mais buscar o objeto da categoria da transacao, pois ele faz isso automaticamente agora.
+  const transactions = await transactionsRepository.find();
 
   return response.json({ transactions, balance });
 });
