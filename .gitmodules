@@ -1,0 +1,3 @@
+[submodule "web"]
+	path = web
+	url = https://github.com/fabiopicolijr/gostack-challenge-react-fundamentals.git
