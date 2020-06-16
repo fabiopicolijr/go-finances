@@ -43,7 +43,7 @@
 
   # Install dependencies
   $ cd server
-  yarn install
+  yarn
 
   # Start server
   yarn dev:server
@@ -58,7 +58,7 @@
 
  # Install dependencies
   $ cd web
-  $ yarn install
+  $ yarn
 
   # Start web app (React)
   $ yarn start
